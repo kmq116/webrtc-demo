@@ -5,6 +5,92 @@
     <title>Title</title>
 </head>
 <body>
-123
+<div id="content"></div>
+<div id="log"></div>
+<video></video>
+<script type="module">
+    // 检查浏览器是否支持getUserMedia
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // 请求摄像头权限
+        // navigator.mediaDevices.getUserMedia({video: true})
+        // navigator.mediaDevices.getUserMedia({video: {facingMode:'user'}})
+        navigator.mediaDevices.getUserMedia({video: {facingMode:'environment'}})
+            .then(function (stream) {
+                selectCamera()
+                // 获取到摄像头流后，可以将其显示在video元素中
+                const video = document.querySelector('video');
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function (err) {
+                console.error("获取摄像头权限失败:", err);
+            });
+    } else {
+        console.error("浏览器不支持getUserMedia");
+    }
+
+    async function getCameras() {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        // const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        const videoDevices = devices.filter(device => device.kind === 'audioinput');
+        // const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        document.getElementById('content').append('全部 videoinput 信息', JSON.stringify(videoDevices))
+
+        const frontCamera = videoDevices.find(device =>
+            /(front|前置)/i.test(device.label));
+        const backCamera = videoDevices.find(device =>
+            /(back|rear|后置)/i.test(device.label));
+
+        return {frontCamera, backCamera};
+    }
+
+    getCameras().then(res => {
+        console.log(res.frontCamera)
+        console.log(res.backCamera)
+        document.getElementById('content').append('前置摄像头信息', JSON.stringify(res.frontCamera))
+        document.getElementById('content').append('后置摄像头信息',JSON.stringify(res.backCamera))
+    })
+
+    getCameras().then(res => {
+        console.log(res.frontCamera)
+        console.log(res.backCamera)
+        document.getElementById('content').append('前置摄像头信息', JSON.stringify(res.frontCamera))
+        document.getElementById('content').append('后置摄像头信息',JSON.stringify(res.backCamera))
+    })
+
+    async function getVideoStream(isFrontCamera = true) {
+        const constraints = {
+            video: {
+                facingMode: isFrontCamera ? 'user' : 'environment'
+            }
+        };
+
+        try {
+            return await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+        }
+    }
+
+    // 使用示例
+    async function selectCamera() {
+        const {frontCamera, backCamera} = await getCameras();
+
+        if (frontCamera) {
+            console.log('Using front camera:', frontCamera.label);
+            const stream = await getVideoStream(true);
+            // 使用获取到的流
+        } else if (backCamera) {
+            console.log('Using back camera:', backCamera.label);
+            const stream = await getVideoStream(false);
+            // 使用获取到的流
+        } else {
+            console.log('No cameras found');
+            document.getElementById('log').append(['\nNo cameras found'])
+        }
+
+    }
+
+</script>
 </body>
 </html>
