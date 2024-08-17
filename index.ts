@@ -1,22 +1,21 @@
 console.log("Hello via Bun!");
-const os = require('os');
+const os = require("os");
 
-var selfsigned = require('selfsigned');
-var attrs = [{name: 'commonName', value: 'contoso.com'}];
-var pems = selfsigned.generate(attrs, {days: 365});
-console.log(pems)
+var selfsigned = require("selfsigned");
+var attrs = [{ name: "commonName", value: "contoso.com" }];
+var pems = selfsigned.generate(attrs, { days: 365 });
+console.log(pems);
 
-const express = require('express');
+const express = require("express");
 
-const https = require('https');
+const https = require("https");
 
 const app = express();
-app.use(express.static('public'));
-
+app.use(express.static("public"));
 
 const options = {
-    key: pems.private,
-    cert: pems.cert
+  key: pems.private,
+  cert: pems.cert,
 };
 
 // 创建 HTTPS 服务器
@@ -24,20 +23,20 @@ const server = https.createServer(options, app);
 
 // 在指定端口上启动服务器
 server.listen(4433, () => {
-    function getIPv4Address() {
-        const interfaces = os.networkInterfaces();
-        for (const interfaceName in interfaces) {
-            const _interface = interfaces[interfaceName];
-            for (const network of _interface) {
-                if (network.family === 'IPv4' && !network.internal) {
-                    return network.address;
-                }
-            }
+  function getIPv4Address() {
+    const interfaces = os.networkInterfaces();
+    for (const interfaceName in interfaces) {
+      const _interface = interfaces[interfaceName];
+      for (const network of _interface) {
+        if (network.family === "IPv4" && !network.internal) {
+          return network.address;
         }
-        return null;
+      }
     }
+    return null;
+  }
 
-    const ipv4Address = getIPv4Address();
-    console.log('IPv4 地址:', ipv4Address);
-    console.log('HTTPS 服务器已启动', `https://${ipv4Address}:4433`);
+  const ipv4Address = getIPv4Address();
+  console.log("IPv4 地址:", ipv4Address);
+  console.log("HTTPS 服务器已启动", `https://${ipv4Address}:4433`);
 });

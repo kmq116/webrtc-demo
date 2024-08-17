@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>实时录制音频并按帧存储</title>
+  </head>
+  <body>
+    <h1>实时录制音频并按帧存储</h1>
+    <button id="startButton">开始录音</button>
+    <button id="stopButton" disabled>停止录音</button>
+
+    <script>
+      // return;
+      // 获取音频流
+      navigator.mediaDevices
+        .getUserMedia({
+          audio: {
+            sampleRate: 8000, // 采样率
+            channelCount: 2, // 声道
+            volume: 1.0, // 音量
+          },
+        })
+        .then((stream) => {
+          console.log(1111);
+
+          const audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          const source = audioContext.createMediaStreamSource(stream);
+
+          // 创建一个ScriptProcessorNode
+          const processor = audioContext.createScriptProcessor(16384, 1, 1);
+
+          // 处理音频数据
+          processor.onaudioprocess = function (event) {
+            const inputBuffer = event.inputBuffer.getChannelData(0);
+            // 将音频数据保存到文件或进行其他处理
+            saveAudioFrame(inputBuffer);
+          };
+
+          // 连接节点
+          source.connect(processor);
+          processor.connect(audioContext.destination);
+        })
+        .catch((error) => {
+          console.error("获取音频流失败:", error);
+        });
+
+      function saveAudioFrame(buffer) {
+        // 将 Float32Array 转换为 Int16Array
+        const int16Buffer = new Int16Array(buffer.length);
+        for (let i = 0; i < buffer.length; i++) {
+          // 将浮点数转换为 16 位整数
+          int16Buffer[i] = Math.max(-1, Math.min(1, buffer[i])) * 0x7fff; // 32767
+        }
+
+        // 创建一个 Blob 对象
+        const blob = new Blob([int16Buffer], { type: "audio/raw" });
+
+        // 创建一个链接并下载文件
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = "audio_frame.raw"; // 文件名
+        document.body.appendChild(a);
+        a.click();
+
+        // 清理
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    </script>
+  </body>
+</html>
