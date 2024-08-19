@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <!-- https://juejin.cn/post/6844903668588740621 -->
+    <input type="file" onchange="playMusic.call(this)" class="select-file" />
+    <audio class="audio-node" autoplay></audio>
+    <script>
+      function playMusic() {
+        if (!this.value) {
+          return;
+        }
+        let fileReader = new FileReader();
+        let file = this.files[0];
+        fileReader.onload = function () {
+          let arrayBuffer = this.result;
+          console.log(arrayBuffer);
+
+          // 转成一个blob
+          let blob = new Blob([new Int16Array(this.result)], {
+            type: "audio/raw", // files[0].type
+          });
+          // 生成一个本地的blob url
+          let blobUrl = URL.createObjectURL(blob);
+          console.log(blobUrl);
+          // 给audio标签的src属性
+          document.querySelector(".audio-node").src = blobUrl;
+        };
+        fileReader.readAsArrayBuffer(this.files[0]);
+      }
+    </script>
+    <!-- <script type="module">
+      function playMusic() {
+        if (!this.value) {
+          return;
+        }
+        let fileReader = new FileReader();
+        let file = this.files[0];
+        fileReader.onload = function () {
+          let arrayBuffer = this.result;
+          console.log(arrayBuffer);
+        };
+        fileReader.readAsArrayBuffer(this.files[0]);
+      }
+    </script> -->
+  </body>
+</html>

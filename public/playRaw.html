@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button onclick="start">点击播放</button>
+    <button onclick="initAudio">initAudio</button>
+    <div id="loading">Loading...</div>
+    <audio hidden controls></audio>
+  </body>
+  <script>
+    initAudio();
+    test();
+    //  这里想添加一个 main 函数
+    async function initAudio() {
+      // specify your file and its audio properties
+      const url = "./语音包-电影-让子弹飞-什么tm的叫.raw";
+      const sampleRate = 8000;
+      const numChannels = 1; // mono or stereo
+      const isFloat = true; // integer or floating point
+
+      const buffer = await (await fetch(url)).arrayBuffer();
+
+      // create WAV header
+      const [type, format] = isFloat ? [Float32Array, 3] : [Uint8Array, 1];
+      console.log({ type, format });
+
+      const wavHeader = new Uint8Array(
+        buildWaveHeader({
+          numFrames: buffer.byteLength / type.BYTES_PER_ELEMENT,
+          bytesPerSample: type.BYTES_PER_ELEMENT,
+          sampleRate,
+          numChannels,
+          format,
+        })
+      );
+
+      // create WAV file with header and downloaded PCM audio
+      const wavBytes = new Uint8Array(wavHeader.length + buffer.byteLength);
+      wavBytes.set(wavHeader, 0);
+      wavBytes.set(new Uint8Array(buffer), wavHeader.length);
+
+      // show audio player
+      const audio = document.querySelector("audio");
+      const blob = new Blob([wavBytes], { type: "audio/wav" });
+      audio.src = URL.createObjectURL(blob);
+
+      document.querySelector("#loading").hidden = true;
+      audio.hidden = false;
+    }
+
+    // adapted from https://gist.github.com/also/900023
+    function buildWaveHeader(opts) {
+      const numFrames = opts.numFrames;
+      const numChannels = opts.numChannels || 2;
+      const sampleRate = opts.sampleRate || 44100;
+      const bytesPerSample = opts.bytesPerSample || 2;
+      const format = opts.format;
+
+      const blockAlign = numChannels * bytesPerSample;
+      const byteRate = sampleRate * blockAlign;
+      const dataSize = numFrames * blockAlign;
+
+      const buffer = new ArrayBuffer(44);
+      const dv = new DataView(buffer);
+
+      let p = 0;
+
+      function writeString(s) {
+        for (let i = 0; i < s.length; i++) {
+          dv.setUint8(p + i, s.charCodeAt(i));
+        }
+        p += s.length;
+      }
+
+      function writeUint32(d) {
+        dv.setUint32(p, d, true);
+        p += 4;
+      }
+
+      function writeUint16(d) {
+        dv.setUint16(p, d, true);
+        p += 2;
+      }
+
+      writeString("RIFF"); // ChunkID
+      writeUint32(dataSize + 36); // ChunkSize
+      writeString("WAVE"); // Format
+      writeString("fmt "); // Subchunk1ID
+      writeUint32(16); // Subchunk1Size
+      writeUint16(format); // AudioFormat
+      writeUint16(numChannels); // NumChannels
+      writeUint32(sampleRate); // SampleRate
+      writeUint32(byteRate); // ByteRate
+      writeUint16(blockAlign); // BlockAlign
+      writeUint16(bytesPerSample * 8); // BitsPerSample
+      writeString("data"); // Subchunk2ID
+      writeUint32(dataSize); // Subchunk2Size
+
+      return buffer;
+    }
+
+    function start() {
+      const audioContext = new (window.AudioContext ||
+        window.webkitAudioContext)();
+      // 假设我们知道音频的格式信息
+      const sampleRate = 8000; // 采样率
+      const numberOfChannels = 1; // 声道数
+      const bitsPerSample = 16; // 位深度
+      fetch("./语音包-电影-让子弹飞-什么tm的叫.raw")
+        .then((response) => response.arrayBuffer())
+        .then((arrayBuffer) => {
+          const audioData = new Int16Array(arrayBuffer);
+          const audioBuffer = audioContext.createBuffer(
+            numberOfChannels,
+            audioData.length / numberOfChannels,
+            sampleRate
+          );
+
+          // 填充音频数据
+          for (let channel = 0; channel < numberOfChannels; channel++) {
+            const nowBuffering = audioBuffer.getChannelData(channel);
+            for (let i = 0; i < nowBuffering.length; i++) {
+              nowBuffering[i] =
+                audioData[i * numberOfChannels + channel] / 32768.0;
+            }
+          }
+
+          // 创建音频源并播放
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(audioContext.destination);
+          source.start(0);
+        })
+        .catch((error) => {
+          console.error("Error loading or processing the audio file:", error);
+        });
+    }
+  </script>
+</html>

@@ -39,4 +39,9 @@ server.listen(4433, () => {
   const ipv4Address = getIPv4Address();
   console.log("IPv4 地址:", ipv4Address);
   console.log("HTTPS 服务器已启动", `https://${ipv4Address}:4433`);
+  console.log(
+    "HTTPS 服务器已启动",
+    `https://${ipv4Address}:4433/recorder.html`
+  );
+  console.log("HTTPS 服务器已启动", `https://${ipv4Address}:4433/playRaw.html`);
 });
