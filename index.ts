@@ -1,14 +1,12 @@
 console.log("Hello via Bun!");
-const os = require("os");
-
-var selfsigned = require("selfsigned");
-var attrs = [{ name: "commonName", value: "contoso.com" }];
+import os from "os";
+import selfsigned from "selfsigned";
+const attrs = [{ name: "commonName", value: "contoso.com" }];
 var pems = selfsigned.generate(attrs, { days: 365 });
 console.log(pems);
 
-const express = require("express");
-
-const https = require("https");
+import express from "express";
+import https from "https";
 
 const app = express();
 app.use(express.static("public"));
